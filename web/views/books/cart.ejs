@@ -1,20 +1,36 @@
-<div class="my-5">
-  <h1 class="text-center mb-5">장바구니</h1>
-  <div id="div_cart"></div>
+<div class="row my-5">
+  <div class="col">
+    <h1 class="text-center mb-5">장바구니</h1>
+    <div id="div_cart"></div>
+  </div>
 </div>
-<script id="temp_cart" type="x-handlebars-template">
-  <table class="table">
-    {{#each .}}
-        <tr>
-            <td><img src="{{thumbnail}}" width="50"></td>
-            <td>{{title}}</td>
-            <td>{{publisher}}</td>
-            <td>{{price}}</td>
-            <td><button class="btn btn-danger btn-sm" isbn="{{isbn}}">삭제</button></td>
-        </tr>
+<!--장바구니 템플릿-->
+<script id="temp_cart" type="text/x-handlebars-template">
+  <table class="table table-striped">
+      {{#each .}}
+      <tr>
+          <td>{{title}}</td>
+          <td>{{authors}}</td>
+          <td>{{fmt_price price}}</td>
+          <td><button class="btn btn-danger btn-sm" isbn="{{isbn}}">삭제</button></td>
 
-    {{/each}}
+      </tr>
+      {{/each}}
+
   </table>
+</script>
+<script>
+  Handlebars.registerHelper("chk_thumbnail", function (thumbnail) {
+    if (!thumbnail) {
+      return "http://via.placeholder.com/120x170";
+    } else {
+      return thumbnail;
+    }
+  });
+  Handlebars.registerHelper("fmt_price", function (price) {
+    if (price)
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "원";
+  });
 </script>
 <script type="module">
   //DB 연동
@@ -26,25 +42,21 @@
     remove,
   } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
   const db = getDatabase(app);
-  const ref_book = ref(db, `cart/${sessionStorage.getItem("uid")}`);
+  const uid = sessionStorage.getItem("uid");
 
-  onValue(ref_book, (snapshot) => {
+  //장바구니 목록
+  onValue(ref(db, `cart/${uid}`), (snapshot) => {
     let rows = [];
     snapshot.forEach((row) => {
-      //   console.log(row.key, row.val());
-      rows.push(row.val());
-      console.log(rows);
-      const temp = Handlebars.compile($("#temp_cart").html());
-      $("#div_cart").html(temp(rows));
+      rows.push({ key: row.key, ...row.val() });
     });
+    let temp = Handlebars.compile($("#temp_cart").html());
+    $("#div_cart").html(temp(rows));
   });
-
-  //삭제버튼 클릭이벤트
-  $("#div_cart").on("click", ".btn", function () {
-    const isbn = $(this).attr("isbn");
-    if (!confirm(`${isbn} 도서를 삭제하시겠어요?`)) return;
-    const ref_book = ref(db, `cart/${sessionStorage.getItem("uid")}/${isbn}`);
-    remove(ref_book);
-    // alert("삭제완료");
+  $("#div_cart").on("click", ".btn-danger", async function () {
+    let isbn = $(this).attr("isbn");
+    if (confirm(isbn + "삭제하실꺼임?")) {
+      await remove(ref(db, `cart/${uid}/${isbn}`));
+    }
   });
 </script>

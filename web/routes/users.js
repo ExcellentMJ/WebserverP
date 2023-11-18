@@ -1,17 +1,11 @@
 var express = require("express");
 var router = express.Router();
 
-/* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.send("respond with a resource");
-});
-//users/login으로 접속시
-//로그인 페이지
+/* 유저 관련 */
 router.get("/login", function (req, res, next) {
   res.render("index", { title: "로그인", pageName: "users/login.ejs" });
 });
-//users/join으로 접속시
-//회원가입 페이지
+/* 유저 관련 */
 router.get("/join", function (req, res, next) {
   res.render("index", { title: "회원가입", pageName: "users/join.ejs" });
 });

@@ -1,84 +1,136 @@
 <div class="row my-5">
   <div class="col">
-    <h1 class="text-center">지역검색</h1>
-    <div class="row mb-2 justify-content-end">
-      <form name="frm" class="col-6 col-md-4 col-lg-3">
+    <h1 class="text-center mb-5">지역검색</h1>
+    <div class="row justify-content-end">
+      <form class="col-6 col-lg-3 col-md-4" name="frm">
         <div class="input-group">
-          <input name="query" class="form-control" value="인하대학교" />
+          <input
+            class="form-control"
+            placeholder="검색어"
+            name="query"
+            value="인하"
+          />
+          <!--Submit 역할-->
           <button class="btn btn-primary">검색</button>
-          <!-- button을 누르거나 enter 치면 form에서 submit event가 발생 -->
         </div>
       </form>
     </div>
-    <!-- 검색 결과 출력 -->
+    <hr />
     <div id="div_locals"></div>
-    <!-- 페이지 이동 -->
-    <div class="text-center">
-      <button id="prev_btn" class="btn btn-primary">이전</button>
-      <span id="span_page" class="mx-3">1/10</span>
-      <button id="next_btn" class="btn btn-primary">다음</button>
+    <div class="text-center mt-3" id="div_page">
+      <button class="btn btn-primary" id="prev">이전</button>
+      <span class="mx-3" id="span_page">1/10</span>
+      <button class="btn btn-primary" id="next">다음</button>
     </div>
+    <div></div>
   </div>
 </div>
-
-<!-- 템플릿 -->
-<script type="x-handlebars-template" id="temp_locals">
+<script id="temp_locals" type="x-handlebars-template">
   <table class="table">
-      {{#each documents}}
-      <tr>
-          <td>{{place_name}}</td>
-          <td>{{address_name}}</td>
-          <td>{{phone}}</td>
-      </tr>
-      {{/each}}
+    {{#each documents}}
+    <tr>
+        <td class="place">{{place_name}}</td>
+        <td>{{address_name}}</td>
+        <td class="phone">{{phone}}</td></td>
+        <td><button class="btn btn-primary btn-sm" local="{{toString @this}}">즐겨찾기</button></td>
+    </tr>
+    {{/each}}
   </table>
 </script>
-
 <script>
-  let page = 1;
+  Handlebars.registerHelper("toString", function (local) {
+    return JSON.stringify(local); //object->string
+  });
+</script>
+<script type="module">
+  //DB 연동
+  import { app } from "/javascripts/firebaseInit.js";
+  import {
+    getDatabase,
+    ref,
+    set,
+    get,
+  } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  const db = getDatabase(app);
+
+  // 폼의 쿼리인풋박스안의 value값을 query 변수에 저장
   let query = $(frm.query).val();
-
-  getLocals();
-
-  // 검색 버튼을 클릭 or 엔터 시
+  let page = 1;
   $(frm).on("submit", function (e) {
-    e.preventDefault(); // Default event의 발생을 막음
+    e.preventDefault();
     query = $(frm.query).val();
-    page = 1;
-    getLocals();
+    if (query == "") {
+      alert("검색내용입력하세요!");
+      $(frm.query).focus();
+    } else {
+      page = 1;
+      getLocals();
+    }
   });
 
-  // 다음 버튼을 클릭한 경우
-  $("#next_btn").on("click", function (e) {
+  // 즐겨찾기 버튼 클릭 시
+  $("#div_locals").on("click", ".btn-sm", async function () {
+    if (!sessionStorage.getItem("email")) {
+      sessionStorage.setItem("target", "/locals");
+      location.href = "/users/login";
+    } else {
+      // 로그인이 될 경우
+      const local = JSON.parse($(this).attr("local"));
+      console.log(local);
+      const ref_local = `favorite/${sessionStorage.getItem("uid")}/${local.id}`;
+      const snapshot = await get(ref(db, ref_local));
+      // console.log(snapshot.val());
+      if (snapshot.val()) {
+        alert("딴 데 찾아오삼");
+      } else {
+        await set(ref(db, ref_local), local);
+        alert("나와바리로 등록됨");
+      }
+    }
+  });
+
+  $("#next").on("click", function () {
     page++;
     getLocals();
   });
-  // 이전 버튼을 클릭한 경우
-  $("#prev_btn").on("click", function (e) {
+  $("#prev").on("click", function () {
     page--;
     getLocals();
   });
-
+  getLocals();
   function getLocals() {
     $.ajax({
       type: "get",
       url: "https://dapi.kakao.com/v2/local/search/keyword.json",
       headers: { Authorization: "KakaoAK a40b5b449d67f0fcf74b4a3bf9e4a072" },
-      data: { page: page, query: query, size: 5 },
+      data: { query: query, page: page, size: 5 },
       success: function (data) {
-        console.log(data);
-
         let temp = Handlebars.compile($("#temp_locals").html());
         $("#div_locals").html(temp(data));
+        console.log(data);
+        // getList 발동시 page 변수가 1이면 버튼 비활성화
+        if (page == 1) {
+          $("#prev").attr("disabled", true);
+        } else {
+          $("#prev").attr("disabled", false);
+        }
 
-        let last = Math.ceil(data.meta.pageable_count / 5);
-        $("#span_page").html(page + "/" + last);
-
-        if (page == 1) $("#prev_btn").attr("disabled", true);
-        else $("#prev_btn").attr("disabled", false);
-
-        if (data.meta.is_end) $("#next_btn").attr("disabled", true);
-        else $("#next_btn").attr("disabled", false);
+        if (data.meta.is_end) {
+          $("#next").attr("disabled", true);
+        } else {
+          $("#next").attr("disabled", false);
+        }
+        // 페이지 카운트를 계산하기 위한 함수
+        let last = Math.ceil(data.meta.pageable_count / 6);
+        if (data.meta.pageable_count > 0) {
+          $("#div_page").show();
+          $("#span_page").html(page + "/" + last);
+        } else {
+          $("#div_page").hide();
+          $("#div_books").html(
+            `<h1 class='text-center'>'${query}'도서가 존재하지 않습니다.</h1>`
+          );
+        }
       },
     });
   }

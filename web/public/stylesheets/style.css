@@ -1,18 +1,15 @@
-/* Custom background color */
 @import url("https://fonts.googleapis.com/css2?family=Cute+Font&family=Noto+Sans+KR&display=swap");
-.body-bg {
-  background-color: #f0f0f0; /* Replace with your desired color code */
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
-
 * {
   font-family: "Noto Sans KR", sans-serif;
 }
 a {
   color: #00b7ff;
 }
-.navbar {
-  color: #fff;
-}
+
 .ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;

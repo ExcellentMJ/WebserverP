@@ -1,28 +1,31 @@
-<div class="row my-5">
-  <div class="col">
+<style>
+  form span {
+    width: 100px;
+  }
+</style>
+<div class="row my-5 justify-content-center">
+  <div class="col-8 col-md-6 col-lg-5">
     <h1 class="text-center">로그인</h1>
-    <form name="frm" class="card p-3">
-      <div class="input-group mb-3">
-        <span class="input-group-text"> 이메일 </span>
-        <input
-          name="email"
-          class="form-control email"
-          value="5035als@test.com"
-        />
+    <div class="card p-3">
+      <form name="frm">
+        <div class="input-group mb-3">
+          <span class="input-group-text">아이디</span>
+          <input name="email" class="form-control" value="5035als@test.com" />
+        </div>
+        <div class="input-group mb-3">
+          <span class="input-group-text">비밀번호</span>
+          <input
+            name="password"
+            type="password"
+            class="form-control"
+            value="Tpaud307!"
+          />
+        </div>
+        <button class="btn btn-primary w-100">로그인</button>
+      </form>
+      <div class="text-end mt-2">
+        <a href="/users/join">회원가입</a>
       </div>
-      <div class="input-group mb-3">
-        <span class="input-group-text"> 비밀번호 </span>
-        <input
-          name="password"
-          class="form-control password"
-          type="password"
-          value="rlaalswns12"
-        />
-      </div>
-      <button class="btn btn-primary w-100">로그인</button>
-    </form>
-    <div class="text-end mt-2">
-      <a href="/users/join">회원가입</a>
     </div>
   </div>
 </div>
@@ -33,66 +36,31 @@
     signInWithEmailAndPassword,
   } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
   const auth = getAuth(app);
+
   $(frm).on("submit", function (e) {
     e.preventDefault();
     const email = $(frm.email).val();
     const password = $(frm.password).val();
-    //유효성체크
+
     if (email == "") {
-      alert("이메일을 입력하세요!");
+      alert("이메일입력하삼");
       $(frm.email).focus();
     } else if (password == "") {
-      alert("비밀번호를 입력하세요!");
+      alert("비밀번호를 입력하삼");
       $(frm.password).focus();
     } else {
-      //로그인체크
       signInWithEmailAndPassword(auth, email, password)
         .then((success) => {
           console.log(success);
-          /*{
-                "user": {
-                    "uid": "2AKqQyiwrEde1s3gOboE8QKUQBZ2",
-                    "email": "5035als@test.com",
-                    "emailVerified": false,
-                    "isAnonymous": false,
-                    "providerData": [
-                        {
-                            "providerId": "password",
-                            "uid": "5035als@test.com",
-                            "displayName": null,
-                            "email": "5035als@test.com",
-                            "phoneNumber": null,
-                            "photoURL": null
-                        }
-                    ],
-                    "stsTokenManager": {
-                        "refreshToken": "AMf-vByb3Nand09MG5u8FUxoNv9kiKi0ceZxhTplfNZP9PyINKDp8Dg3cxZD0HTOP5TFbGIJ84fmF4qRkEvpfQBCzF7GOzKDKKw6NFGk-vsjgpD8LnjABKV9yBvVruZGCy0ON2Musa9KaxaMkc8sx6H0GQfgCrir-x_BJ5_PIe3_dPG1LGRwJfqHuBS5Bh4h-20gh8a5YVxM_nqU86u_LcAjhX6kIzhZ9Q",
-                        "accessToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImYyZTgyNzMyYjk3MWExMzVjZjE0MTZlOGI0NmRhZTA0ZDgwODk0ZTciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vd2Vic2VydmVyY2xhc3MiLCJhdWQiOiJ3ZWJzZXJ2ZXJjbGFzcyIsImF1dGhfdGltZSI6MTY5NzI2MTUwNywidXNlcl9pZCI6IjJBS3FReWl3ckVkZTFzM2dPYm9FOFFLVVFCWjIiLCJzdWIiOiIyQUtxUXlpd3JFZGUxczNnT2JvRThRS1VRQloyIiwiaWF0IjoxNjk3MjYxNTA3LCJleHAiOjE2OTcyNjUxMDcsImVtYWlsIjoiNTAzNWFsc0B0ZXN0LmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyI1MDM1YWxzQHRlc3QuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.pDDNZZfd_Vrc0igHllOWs1DzPpwVc5Y0h5Lygsyh3RKEWaEwCWVdhy_Robl9ydDhVfu1gE2kDnkn5XXX_fATILe010bWK9jFHeHTfXBukTyln8uJF4vMEMGcCOWtkSCMa0tzSErRsM6CQZknPlEj9Lf60-b49L_EBRdOcxVXQp_tcSLRzcPUHaFU_HMhDZlJxS8x5dHZwqnD0p1lsTusvvg8N8PEEODLuko2jjFoSXeqCvhZIUcJIvI_oqIZwZJTpPR4ZVSbrzDz2ibXyx8bgMhP1BLE_mg-nsyiXan1nlDy1z14lpCueFd3Vnw5NYGnHZeBrSkz4FdTcE-cQ7nQPQ",
-                        "expirationTime": 1697265107716
-                    },
-                    "createdAt": "1696652309312",
-                    "lastLoginAt": "1697261443857",
-                    "apiKey": "AIzaSyDGpzUAoYUuxkbBXkMbNbc2VZiBolRvpqU",
-                    "appName": "[DEFAULT]"
-                },
-                "providerId": null,
-                "_tokenResponse": {
-                    "kind": "identitytoolkit#VerifyPasswordResponse",
-                    "localId": "2AKqQyiwrEde1s3gOboE8QKUQBZ2",
-                    "email": "5035als@test.com",
-                    "displayName": "",
-                    "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImYyZTgyNzMyYjk3MWExMzVjZjE0MTZlOGI0NmRhZTA0ZDgwODk0ZTciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vd2Vic2VydmVyY2xhc3MiLCJhdWQiOiJ3ZWJzZXJ2ZXJjbGFzcyIsImF1dGhfdGltZSI6MTY5NzI2MTUwNywidXNlcl9pZCI6IjJBS3FReWl3ckVkZTFzM2dPYm9FOFFLVVFCWjIiLCJzdWIiOiIyQUtxUXlpd3JFZGUxczNnT2JvRThRS1VRQloyIiwiaWF0IjoxNjk3MjYxNTA3LCJleHAiOjE2OTcyNjUxMDcsImVtYWlsIjoiNTAzNWFsc0B0ZXN0LmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyI1MDM1YWxzQHRlc3QuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.pDDNZZfd_Vrc0igHllOWs1DzPpwVc5Y0h5Lygsyh3RKEWaEwCWVdhy_Robl9ydDhVfu1gE2kDnkn5XXX_fATILe010bWK9jFHeHTfXBukTyln8uJF4vMEMGcCOWtkSCMa0tzSErRsM6CQZknPlEj9Lf60-b49L_EBRdOcxVXQp_tcSLRzcPUHaFU_HMhDZlJxS8x5dHZwqnD0p1lsTusvvg8N8PEEODLuko2jjFoSXeqCvhZIUcJIvI_oqIZwZJTpPR4ZVSbrzDz2ibXyx8bgMhP1BLE_mg-nsyiXan1nlDy1z14lpCueFd3Vnw5NYGnHZeBrSkz4FdTcE-cQ7nQPQ",
-                    "registered": true,
-                    "refreshToken": "AMf-vByb3Nand09MG5u8FUxoNv9kiKi0ceZxhTplfNZP9PyINKDp8Dg3cxZD0HTOP5TFbGIJ84fmF4qRkEvpfQBCzF7GOzKDKKw6NFGk-vsjgpD8LnjABKV9yBvVruZGCy0ON2Musa9KaxaMkc8sx6H0GQfgCrir-x_BJ5_PIe3_dPG1LGRwJfqHuBS5Bh4h-20gh8a5YVxM_nqU86u_LcAjhX6kIzhZ9Q",
-                    "expiresIn": "3600"
-                },
-                "operationType": "signIn"
-            }*/
-          //   //세션에 로그인 정보 저장
           sessionStorage.setItem("email", email);
           sessionStorage.setItem("uid", success.user.uid);
-          alert("로그인에 성공하셨습니다.");
-          location.href = "/";
+
+          //로그인 성공시 세션에 타겟 정보가 남아있으면, 그 페이지로 이동
+          if (sessionStorage.getItem("target")) {
+            location.href = sessionStorage.getItem("target");
+          } else {
+            location.href = "/";
+          }
         })
         .catch((error) => {
           alert(error.message);
