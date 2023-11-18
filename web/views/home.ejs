@@ -2,6 +2,10 @@
   #div_books img {
     cursor: pointer;
   }
+  #div_books .bi-cart{
+    cursor:pointer;
+    color: green;
+  }
 </style>
 
 <!-- Content -->
@@ -36,6 +40,7 @@
         </div>
         <div class="card-footer">
           {{price}}원
+          <i class="bi bi-cart float-end" book="{{book @this}}"></i>
         </div>
       </div>
     </div>
@@ -43,10 +48,60 @@
   {{/each}}
 </script>
 <script>
+  
+
+  Handlebars.registerHelper("chkImage", function(thumbnail){
+      if(!thumbnail) {
+          return "http://via.placeholder.com/120x170";
+      }else {
+          return thumbnail;
+      }
+  });
+
+  Handlebars.registerHelper("fmt_price", function(price){
+      if(price) return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+  });
+
+  Handlebars.registerHelper("book", function(book){
+      return JSON.stringify(book);
+  });
+</script>
+<script type="module">
+  //DB 연동
+  import { app } from '/javascripts/firebaseInit.js';
+  import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  const db= getDatabase(app);
+
+
+
+
   // 폼의 쿼리인풋박스안의 value값을 query 변수에 저장
   let query = $(frm.query).val();
   let page = 1;
 
+  //장바구니 아이콘 클릭했을 때
+  $("#div_books").on("click", ".bi-cart", async function(){
+    if(!sessionStorage.getItem("email")){
+      alert("로그인부터 하고오세요")
+      location.href="/users/login";
+
+    } else{
+      //장바구니에 상품정보 저장
+      const book = JSON.parse($(this).attr("book"));
+      console.log(book);
+      const ref_book = `cart/${sessionStorage.getItem('uid')}/${book.isbn}`;
+      //장바구니에 도서가 있는지 확인
+      const snapshot=await get(ref(db, ref_book));
+      if(snapshot.val()){
+        alert("이미 등록된 도서입니다.");
+      } else{
+        if(!confirm("장바구니에 저장하실래요?")) return;
+        set(ref(db, ref_book), book);
+        alert("장바구니에 담음");
+      }
+      
+    }
+  })
   //이미지 클릭했을 때
   $("#div_books").on("click", "img", function () {
     let index = $(this).attr("index");
