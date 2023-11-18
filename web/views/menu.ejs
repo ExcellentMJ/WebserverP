@@ -24,6 +24,11 @@
             >지역검색</a
           >
         </li>
+        <li class="nav-item" id="cart" style="display: none">
+          <a class="nav-link active" aria-current="page" href="/books/cart"
+            >장바구니</a
+          >
+        </li>
       </ul>
       <ul class="navbar-nav d-flex">
         <!-- d-flex : 우측 정렬 -->
@@ -56,7 +61,7 @@
     2. 세션 클리어링
     3. 다시 메인화면(/)으로 redirect*/
   if (sessionStorage.getItem("email")) {
-    $("#login, #email, #logout").toggle();
+    $("#login, #email, #logout, #cart").toggle();
     $("#email a").html(sessionStorage.getItem("email"));
   }
   $("#logout").on("click", "a", function (e) {
