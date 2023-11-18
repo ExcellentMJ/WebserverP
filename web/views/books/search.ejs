@@ -1,7 +1,21 @@
 <div class="row my-5">
   <div class="col">
-    <h1 class="text-center">도서검색</h1>
-    <div id="div_books" class="container"></div>
+    <div class="row mb-3 justify-content-end">
+      <form name="frm" class="col-6 col-md-4 col-lg-3">
+        <div class="input-group">
+          <input name="query" class="form-control" type="text" value="자바" />
+          <button class="btn btn-primary">검색</button>
+        </div>
+      </form>
+    </div>
+    <!-- 검색결과 출력 -->
+    <div id="div_books" class="row"></div>
+    <!-- 페이징 기능-->
+    <div class="text-center">
+      <button class="btn btn-primary" id="prev">이전</button>
+      <span id="span_page">1/10</span>
+      <button class="btn btn-primary" id="next">다음</button>
+    </div>
   </div>
 </div>
 <script type="x-handlebars-template" id="temp_books">
@@ -17,19 +31,45 @@
   </table>
 </script>
 <script>
+  // 폼의 쿼리인풋박스안의 value값을 query 변수에 저장
+  let query = $(frm.query).val();
+  let page = 1;
+
+  $(frm).on("submit", function (e) {
+    e.preventDefault();
+    page = 1;
+    query = $(frm.query).val();
+    getBooks();
+  });
+  $("#prev").on("click", function () {
+    page -= 1;
+    getBooks();
+  });
+  $("#next").on("click", function () {
+    page += 1;
+    getBooks();
+  });
   getBooks();
 
   // 도서검색 데이터 불러오기
   function getBooks() {
     $.ajax({
       type: "GET",
-      url: "https://dapi.kakao.com/v3/search/book?target=title",
+      url: "https://dapi.kakao.com/v3/search/book?target=authors",
       headers: { Authorization: "KakaoAK a40b5b449d67f0fcf74b4a3bf9e4a072" },
-      data: { query: "마케팅 관리적", page: 1, size: 5 },
+      data: { query: query, page: page, size: 10 },
       success: function (data) {
-        //console.log(data);
+        console.log(data);
         let temp = Handlebars.compile($("#temp_books").html());
         $("#div_books").html(temp(data));
+
+        let last = Math.ceil(data.meta.pageable_count / 10);
+        $("#span_page").html(page + "/" + last);
+
+        if (page == 1) $("#prev").attr("disabled", true);
+        else $("#prev").attr("disabled", false);
+        if (data.meta.is_end) $("#next").attr("disabled", true);
+        else $("#next").attr("disabled", false);
       },
     });
   }
