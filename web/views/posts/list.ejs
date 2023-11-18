@@ -1,0 +1,72 @@
+<div class="my-5">
+  <h1 class="text-center mb-5">게시판</h1>
+  <div class="text-end">
+    <button id="btn-insert" class="btn btn-primary">글쓰기</button>
+  </div>
+  <!-- <div>게시글 수:<span id="total"></span></div> -->
+  <hr />
+  <div id="div_posts"></div>
+  <!-- <div id="pagination" class="text-center">
+    <button id="btn_prev" class="btn btn-primary">이전</button>
+    <span id="span_page" class="max-3">1/10</span>
+    <button id="btn_next" class="btn btn-primary">다음</button>
+  </div> -->
+</div>
+<script id="temp_posts" type="x-handlebars-templates">
+  <table class="table table-striped table-hover table-bordered">
+        <tr class="text-center">
+            <td>제목</td><td>작성자</td><td>작성일</td>
+
+        </tr>
+      {{#each .}}
+      <tr>
+          <td>{{title}}</td>
+          <td>{{email}}</td>
+          <td>{{date}}</td>
+      </tr>
+      {{/each}}
+  </table>
+</script>
+<script type="module">
+  // Firestore 사용
+  import { app } from "/javascripts/firebaseInit.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    orderBy,
+    getDocs,
+    where,
+    doc,
+  } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+  const db = getFirestore(app);
+  const email = sessionStorage.getItem("email");
+
+  getPosts();
+  async function getPosts() {
+    const q = query(collection(db, "posts"), orderBy("date", "desc"));
+    const snapshot = await getDocs(q);
+    let rows = [];
+    //console.log(snapshot.docs);
+    let total = snapshot.docs.length;
+    // last = Math.ceil(total / size);
+    $("#total").html(total);
+
+    snapshot.docs.forEach((doc) => {
+      const row = { id: doc.id, ...doc.data() };
+      rows.push(row);
+    });
+
+    const temp = Handlebars.compile($("#temp_posts").html());
+    $("#div_posts").html(temp(rows));
+  }
+
+  $("#btn-insert").on("click", function () {
+    if (!sessionStorage.getItem("email")) {
+      location.href = "/users/login";
+      sessionStorage.setItem("target", "/posts/insert");
+    } else {
+      location.href = "/posts/insert";
+    }
+  });
+</script>

@@ -1,9 +1,13 @@
 var express = require("express");
 var router = express.Router();
 
-/* GET 게시판 page. */
+/* 게시판 */
 router.get("/", function (req, res, next) {
-  res.render("posts", { title: "김근미레스", name: "홍길동" });
+  res.render("index", { title: "게시판", pageName: "posts/list.ejs" });
 });
 
+/* 글쓰기 */
+router.get("/insert", function (req, res, next) {
+  res.render("index", { title: "글쓰기", pageName: "posts/insert.ejs" });
+});
 module.exports = router;
