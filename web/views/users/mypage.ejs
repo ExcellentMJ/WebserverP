@@ -1,0 +1,168 @@
+<style>
+  #photo {
+    border-radius: 50%;
+  }
+  #file {
+    display: none;
+  }
+</style>
+<div class="my-5">
+  <h1 class="text-center mb-5">마이페이지</h1>
+  <div class="row justify-content-center">
+    <div class="col-8">
+      <div class="text-center">
+        <img
+          id="photo"
+          src="https://via.placeholder.com/200x200"
+          width="200"
+          alt=""
+        />
+        <input id="file" type="file" />
+        <div>
+          <button class="btn btn-primary px-5 mt-2">이미지 저장</button>
+        </div>
+      </div>
+      <form name="frm" class="card p-3">
+        <div class="input-group mb-2">
+          <span class="input-group-text">이름</span>
+          <input name="name" class="form-control" />
+        </div>
+        <div class="input-group mb-2">
+          <span class="input-group-text">전화</span>
+          <input name="phone" class="form-control" />
+        </div>
+        <div class="input-group mb-2">
+          <span class="input-group-text">주소</span>
+          <input name="address" class="form-control" readonly />
+          <button id="btn-search" type="button" class="btn btn-primary">
+            검색
+          </button>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn btn-primary px-5">저장</button>
+          <button type="reset" class="btn btn-secondary px-5">취소</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- 모달 구조 -->
+<div
+  class="modal fade"
+  id="myModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="myModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">모달 제목</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="px-30 modal-body text-center">
+        <img src="/images/obito.jpg" alt="" />
+        <h1>"뭔가 빈 곳이 느껴지지 않는가?"</h1>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module">
+  // Firestore 사용
+  import { app } from "/javascripts/firebaseInit.js";
+  import {
+    getFirestore,
+    setDoc,
+    doc,
+    getDoc,
+  } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+  import {
+    getStorage,
+    uploadBytes,
+    ref,
+    getDownloadURL,
+  } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  const uid = sessionStorage.getItem("uid");
+  const email = sessionStorage.getItem("email");
+  // 포토를 클릭하면 파일 선택
+  $("#photo").on("click", function () {
+    $("#file").click();
+  });
+  // 파일 선택해서 변경되면 포토 변경ㄴ
+  $("#file").on("change", function (e) {
+    $("#photo").attr("src", URL.createObjectURL(e.target.files[0]));
+  });
+  //검색 버튼 클릭 시 Postcode로 주소 찾는 api 염
+  $("#btn-search").on("click", function () {
+    new daum.Postcode({
+      oncomplete: function (data) {
+        console.log(data);
+        const address = data.roadAddress;
+        const building = data.buildingName ? `(${data.buildingName})` : "";
+        $(frm.address).val(address + building);
+      },
+    }).open();
+  });
+  //전역변수
+  let user;
+  $(window).on("load", async function () {
+    const snapshot = await getDoc(doc(db, `users/${uid}`));
+    if (snapshot.data()) {
+      user = snapshot.data();
+      $(frm.name).val(user.name);
+      $(frm.phone).val(user.phone);
+      $(frm.address).val(user.address);
+    }
+    // console.log(snapshot.data());
+  });
+  //form Submit 할 때
+  $(frm).on("submit", async function (e) {
+    e.preventDefault();
+    const name = $(frm.name).val();
+    const phone = $(frm.phone).val();
+    const address = $(frm.address).val();
+    if (name == "") {
+      $("#myModal").modal("show");
+      //   alert("이름 입력 ㄱㄱ");
+      $(frm.name).focus();
+      return;
+    }
+    if (phone == "") {
+      alert("전화번호 입력 ㄱㄱ");
+      $(frm.phone).focus();
+      return;
+    }
+    if (address == "") {
+      alert("주소 입력 ㄱㄱ");
+      return;
+    }
+    if (confirm("저장?")) {
+      await setDoc(doc(db, `users/${uid}`), {
+        email: email,
+        name: name,
+        phone: phone,
+        address: address,
+      });
+      alert("변경됨 개꿀");
+      location.href = "/";
+    }
+  });
+  $(".modal .close").click(function () {
+    $(this).closest(".modal").modal("hide");
+  });
+</script>
