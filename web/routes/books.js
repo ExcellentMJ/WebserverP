@@ -1,9 +1,9 @@
 var express = require("express");
 var router = express.Router();
 
-/* GET Books page. */
+/* GET home page. */
 router.get("/", function (req, res, next) {
-  res.render("books", { title: "김근미레스", name: "홍길동" });
+  res.render("index", { title: "도서검색", pageName: "books/search.ejs" });
 });
 
 module.exports = router;
