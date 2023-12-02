@@ -13,18 +13,41 @@
     <div>댓글수: <span id="total"></span></div>
   </div>
   <div id="div_comments"></div>
+  <div id="pagination" class="pagination justify-content-center mt-5"></div>
 </div>
 <script id="temp_comments" type="x-handlebars-templates">
   {{#each .}}
-    <div>
+      <div>
         <div>
-            <small>{{email}}</small>
+            <small><b>{{email}}</b></small>
             <small>{{date}}</small>
         </div>
-        <div>{{body}}</div>
-    </div>
+        <div class="view{{id}}">
+          <div class="ellipsis body">{{body}}</div>
+          <div class="text-end" style="{{fn_display email}}">
+            <button class="btn-update btn btn-success btn-sm" cid="{{id}}">수정</button>
+            <button class="btn-delete btn btn-danger btn-sm" cid="{{id}}">삭제</button>
+          </div>
+        </div>
+        <div class="edit{{id}}" style="display:none;">
+          <div><textarea class="body form-control" rows="5">{{body}}</textarea></div>
+          <div class="text-end mt-2">
+            <button class="btn-save btn-primary btn-sm" cid="{{id}}">저장</button>
+            <button class="btn-cancel btn btn-secondary btn-sm" cid="{{id}}">취소</button>
+          </div>
+        </div>
+      </div>
+
     <hr/>
   {{/each}}
+</script>
+<script>
+  Handlebars.registerHelper("fn_elipsis", function () {});
+  Handlebars.registerHelper("fn_display", function (email) {
+    if (sessionStorage.getItem("email") != email) {
+      return "display:none";
+    }
+  });
 </script>
 <script type="module">
   // Firestore 사용
@@ -34,6 +57,9 @@
     collection,
     addDoc,
     getDocs,
+    getDoc,
+    setDoc,
+    deleteDoc,
     doc,
     where,
     orderBy,
@@ -41,7 +67,9 @@
   } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
   const db = getFirestore(app);
   const pid = "<%=id%>";
-
+  let page = 1;
+  const size = 3;
+  let total = 0;
   if (sessionStorage.getItem("email")) {
     $("#div_insert, #div_login").toggle();
   }
@@ -49,6 +77,47 @@
   $("#btn-login").on("click", function () {
     sessionStorage.setItem("target", "/posts/read?id=" + pid);
     location.href = "/users/login";
+  });
+  //댓글내용을 클릭한 경우
+  $("#div_comments").on("click", ".body", function () {
+    $(this).toggleClass("ellipsis");
+  });
+  //취소버튼 클릭했을 때,
+  $("#div_comments").on("click", ".btn-cancel", function () {
+    const id = $(this).attr("cid");
+    $("#div_comments .edit" + id).hide();
+    $("#div_comments .view" + id).show();
+  });
+
+  //수정버튼 클릭했을 때,
+  $("#div_comments").on("click", ".btn-update", function () {
+    const id = $(this).attr("cid");
+    $("#div_comments .edit" + id).show();
+    $("#div_comments .view" + id).hide();
+  });
+
+  //수정 모드에서 저장 버튼 눌렀을 떄,
+  $("#div_comments").on("click", ".btn-save", async function () {
+    const id = $(this).attr("cid");
+    const edit = $(this).parent().parent();
+    const body = edit.find(".body").val();
+    if (confirm("수정하실?")) {
+      const comment = await getDoc(doc(db, `comments/${id}`));
+      // console.log(comment.data());
+      await setDoc(doc(db, `comments/${id}`), {
+        ...comment.data(),
+        body,
+      });
+      alert("수정완료");
+      getComments();
+    }
+  });
+  // 삭제버튼 클릭했을때. deleteDoc 사용
+  $("#div_comments").on("click", ".btn-delete", async function () {
+    const id = $(this).attr("cid");
+    await deleteDoc(doc(db, `comments/${id}`));
+    alert("삭제 성공!");
+    getComments();
   });
 
   $("#btn-insert").on("click", async function () {
@@ -74,13 +143,37 @@
       orderBy("date", "desc")
     );
     const snapshot = await getDocs(q);
-    $("#total").html(snapshot.docs.length);
+    if (total != snapshot.docs.length) {
+      total = snapshot.docs.length;
+      const totalPages = Math.ceil(total / size);
+      $("#pagination").twbsPagination("changeTotalPages", totalPages, 1);
+    }
+    $("#total").html(total);
     // console.log(snapshot);
     let rows = [];
-    snapshot.docs.forEach((doc) => {
-      rows.push({ id: doc.id, ...doc.data() });
+    snapshot.docs.forEach((row, index) => {
+      const start = (page - 1) * size;
+      const end = page * size - 1;
+      if (index >= start && index <= end) {
+        rows.push({ id: row.id, ...row.data() });
+      }
     });
     const temp = Handlebars.compile($("#temp_comments").html());
     $("#div_comments").html(temp(rows));
   }
+
+  $("#pagination").twbsPagination({
+    totalPages: 10, //총 페이지 번호 수
+    visiblePages: 5, // 하단에서 한 번에 보여 지는 페이지 번호 수
+    startPage: 1, // 시작 시 표시되는 현재 페이지
+    initiateStartPageClick: false, // 플러그인이 시작 시 페이지 버튼 클릭 여부 (default : true)
+    first: "<<", // 페이지네이션 버튼 중 처음으로 돌아가는 버튼에 쓰여 있는 텍스트
+    prev: "<", // 이전 페이지 버튼에 쓰여 있는 텍스트
+    next: ">", // 다음 페이지 버튼에 쓰여 있는 텍스트
+    last: ">>", // 페이지네이션 버튼 중 마지막으로 가는 버튼에 쓰여 있는 텍스트
+    onPageClick: function (event, clickPage) {
+      page = clickPage;
+      getComments();
+    },
+  });
 </script>
